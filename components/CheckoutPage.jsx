@@ -1,16 +1,32 @@
-'use client'
-import { useStripe, usesElements, PaymentElement, useElements } from "@stripe/react-stripe-js"
-import { useState } from "react";
+import convertToSubcurrency from "@/lib/convertToSubCurrency";
+import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import React, { useEffect, useState } from "react";
 
-function CheckoutPage({amount}) {
-    const stripe = useStripe();
-    const elements = useElements();
-    const [errorMessage ,setErrorMessage] = useState();
-    const [clientSecret, setClientSecret] = useState();
-    const [loading, setLoading] = useState(false);
+const CheckoutPage = ({ amount }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [errorMessage, setErrorMessage] = useState();
+  const [clientSecret, setClientSecret] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/create-payment-intent", {
+      method: "POST",
+      headers:{
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({amount: convertToSubcurrency(amount)})
+    })
+    .then((res) => res.json())
+    .then((data) => setClientSecret(data.clientSecret))
+  }, [amount])
+
   return (
-    <div>CheckoutPage</div>
-  )
-}
+    <form>
+      {clientSecret && <PaymentElement /> }
+      <button>Pay</button>
+    </form>
+  );
+};
 
-export default CheckoutPage
+export default CheckoutPage;
